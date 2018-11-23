@@ -180,7 +180,6 @@ public final class CameraManager {
                 autoFocusManager.stop();
                 autoFocusManager = null;
             }
-            configManager.setTorch(theCamera.getCamera(), newSetting);
             if (wasAutoFocusManager) {
                 autoFocusManager = new AutoFocusManager(context, theCamera.getCamera());
                 autoFocusManager.start();

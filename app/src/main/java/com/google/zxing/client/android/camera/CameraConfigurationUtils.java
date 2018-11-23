@@ -52,10 +52,10 @@ public final class CameraConfigurationUtils {
   private CameraConfigurationUtils() {
   }
 
-  public static void setFocus(Camera.Parameters parameters,
-                              boolean autoFocus,
-                              boolean disableContinuous,
-                              boolean safeMode) {
+  static void setFocus(Camera.Parameters parameters,
+                       boolean autoFocus,
+                       boolean disableContinuous,
+                       boolean safeMode) {
     List<String> supportedFocusModes = parameters.getSupportedFocusModes();
     String focusMode = null;
     if (autoFocus) {
