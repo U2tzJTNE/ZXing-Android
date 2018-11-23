@@ -16,11 +16,10 @@
 
 package com.google.zxing.client.android.camera;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.hardware.Camera;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
 
     private static final String TAG = AutoFocusManager.class.getSimpleName();
 
-    private static final long AUTO_FOCUS_INTERVAL_MS = 2000L;
+    private static final long AUTO_FOCUS_INTERVAL_MS = 1000L;
     private static final Collection<String> FOCUS_MODES_CALLING_AF;
 
     static {
@@ -107,6 +106,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
 
     }
 
+    @SuppressLint("StaticFieldLeak")
     private final class AutoFocusTask extends AsyncTask<Object, Object, Object> {
         @Override
         protected Object doInBackground(Object... voids) {
