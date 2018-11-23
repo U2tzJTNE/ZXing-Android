@@ -22,12 +22,16 @@ import com.google.zxing.client.android.camera.CameraManager;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.Window;
@@ -58,6 +62,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private String characterSet;
     private InactivityTimer inactivityTimer;
     private BeepManager beepManager;
+    private MyOrientationDetector myOrientationDetector;
 
     ViewfinderView getViewfinderView() {
         return viewfinderView;
@@ -82,14 +87,21 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         hasSurface = false;
         inactivityTimer = new InactivityTimer(this);
         beepManager = new BeepManager(this);
+
+        myOrientationDetector = new MyOrientationDetector(this);
+        myOrientationDetector.setLastOrientation(getWindowManager().getDefaultDisplay()
+                .getRotation());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // CameraManager must be initialized here, not in onCreate(). This is necessary because we don't
-        // want to open the camera driver and measure the screen size if we're going to show the help on
-        // first launch. That led to bugs where the scanning rectangle was the wrong size and partially
+        // CameraManager must be initialized here, not in onCreate(). This is necessary because
+        // we don't
+        // want to open the camera driver and measure the screen size if we're going to show the
+        // help on
+        // first launch. That led to bugs where the scanning rectangle was the wrong size and
+        // partially
         // off screen.
         cameraManager = new CameraManager(getApplication());
 
@@ -130,6 +142,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             SurfaceHolder surfaceHolder = surfaceView.getHolder();
             surfaceHolder.removeCallback(this);
         }
+        if (myOrientationDetector != null) myOrientationDetector.disable();
         super.onPause();
     }
 
@@ -200,7 +213,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             cameraManager.openDriver(surfaceHolder);
             // Creating the handler starts the preview, which can also throw a RuntimeException.
             if (handler == null) {
-                handler = new CaptureActivityHandler(this, decodeFormats, characterSet, cameraManager);
+                handler = new CaptureActivityHandler(this, decodeFormats, characterSet,
+                        cameraManager);
             }
             decodeOrStoreSavedBitmap(null, null);
         } catch (IOException ioe) {
@@ -236,5 +250,48 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
                 return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private class MyOrientationDetector extends OrientationEventListener {
+
+        private int lastOrientation = -1;
+
+        MyOrientationDetector(Context context) {
+            super(context);
+        }
+
+        void setLastOrientation(int rotation) {
+            switch (rotation) {
+                case Surface.ROTATION_90:
+                    lastOrientation = 270;
+                    break;
+                case Surface.ROTATION_270:
+                    lastOrientation = 90;
+                    break;
+                default:
+                    lastOrientation = -1;
+            }
+        }
+
+        @Override
+        public void onOrientationChanged(int orientation) {
+            Log.d(TAG, "orientation:" + orientation);
+            if (orientation > 45 && orientation < 135) {
+                orientation = 90;
+            } else if (orientation > 225 && orientation < 315) {
+                orientation = 270;
+            } else {
+                orientation = -1;
+            }
+            if ((orientation == 90 && lastOrientation == 270) || (orientation == 270 &&
+                    lastOrientation == 90)) {
+                Log.i(TAG, "orientation:" + orientation + "lastOrientation:" + lastOrientation);
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+                lastOrientation = orientation;
+                Log.i(TAG, "SUCCESS");
+            }
+        }
     }
 }
