@@ -215,15 +215,17 @@ public final class CameraManager {
             if (camera == null) {
                 return null;
             }
+            // 获取屏幕的尺寸像素
             Point screenResolution = configManager.getScreenResolution();
             if (screenResolution == null) {
                 // Called early, before init even finished
                 return null;
             }
-
+            // 根据屏幕的宽高找到最合适的矩形框宽高值
             int width = findDesiredDimensionInRange(screenResolution.x, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
             //int height = findDesiredDimensionInRange(screenResolution.y, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);
             int height = width;
+            // 取屏幕中间的，宽为width，高为height的矩形框
             int leftOffset = (screenResolution.x - width) / 2;
             int topOffset = (screenResolution.y - height) / 2;
             framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);
@@ -255,6 +257,7 @@ public final class CameraManager {
             if (framingRect == null) {
                 return null;
             }
+            // 获取相机分辨率和屏幕分辨率
             Rect rect = new Rect(framingRect);
             Point cameraResolution = configManager.getCameraResolution();
             Point screenResolution = configManager.getScreenResolution();
@@ -262,7 +265,7 @@ public final class CameraManager {
                 // Called early, before init even finished
                 return null;
             }
-
+            // 根据相机分辨率和屏幕分辨率的比例对屏幕中央聚焦框进行调整
             if(screenResolution.x < screenResolution.y){
                 // portrait
                 rect.left = rect.left * cameraResolution.y / screenResolution.x;
@@ -329,6 +332,7 @@ public final class CameraManager {
      * @return A PlanarYUVLuminanceSource instance.
      */
     public PlanarYUVLuminanceSource buildLuminanceSource(byte[] data, int width, int height) {
+        // 取得预览框内的矩形
         Rect rect = getFramingRectInPreview();
         if (rect == null) {
             return null;

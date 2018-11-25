@@ -61,7 +61,11 @@ final class CameraConfigurationManager {
             display = manager.getDefaultDisplay();
         }
 
-        int displayRotation = display.getRotation();
+        // 判断屏幕方向，是否有需要从自然角度旋转到显示器角度
+        int displayRotation = 0;
+        if (display != null) {
+            displayRotation = display.getRotation();
+        }
         int cwRotationFromNaturalToDisplay;
         switch (displayRotation) {
             case Surface.ROTATION_0:
@@ -86,6 +90,7 @@ final class CameraConfigurationManager {
         }
         Log.i(TAG, "Display at: " + cwRotationFromNaturalToDisplay);
 
+        //判断相机的方向，根据前后摄像机判断是否有需要旋转
         int cwRotationFromNaturalToCamera = camera.getOrientation();
         Log.i(TAG, "Camera at: " + cwRotationFromNaturalToCamera);
 
@@ -99,18 +104,20 @@ final class CameraConfigurationManager {
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     String overrideRotationString;
     if (camera.getFacing() == CameraFacing.FRONT) {
-      overrideRotationString = prefs.getString(PreferencesActivity.KEY_FORCE_CAMERA_ORIENTATION_FRONT, null);
+      overrideRotationString = prefs.getString(PreferencesActivity
+      .KEY_FORCE_CAMERA_ORIENTATION_FRONT, null);
     } else {
-      overrideRotationString = prefs.getString(PreferencesActivity.KEY_FORCE_CAMERA_ORIENTATION, null);
+      overrideRotationString = prefs.getString(PreferencesActivity.KEY_FORCE_CAMERA_ORIENTATION,
+      null);
     }
     if (overrideRotationString != null && !"-".equals(overrideRotationString)) {
       Log.i(TAG, "Overriding camera manually to " + overrideRotationString);
       cwRotationFromNaturalToCamera = Integer.parseInt(overrideRotationString);
     }
      */
-
-        cwRotationFromDisplayToCamera =
-                (360 + cwRotationFromNaturalToCamera - cwRotationFromNaturalToDisplay) % 360;
+        //根据屏幕方向和相机方向判断是否有需要进行旋转
+        cwRotationFromDisplayToCamera = (360 + cwRotationFromNaturalToCamera -
+                cwRotationFromNaturalToDisplay) % 360;
         Log.i(TAG, "Final display orientation: " + cwRotationFromDisplayToCamera);
         if (camera.getFacing() == CameraFacing.FRONT) {
             Log.i(TAG, "Compensating rotation for front camera");
@@ -124,9 +131,12 @@ final class CameraConfigurationManager {
         display.getSize(theScreenResolution);
         screenResolution = theScreenResolution;
         Log.i(TAG, "Screen resolution in current orientation: " + screenResolution);
-        cameraResolution = CameraConfigurationUtils.findBestPreviewSizeValue(parameters, screenResolution);
+        // 寻找最佳的预览宽高值
+        cameraResolution = CameraConfigurationUtils.findBestPreviewSizeValue(parameters,
+                screenResolution);
         Log.i(TAG, "Camera resolution: " + cameraResolution);
-        bestPreviewSize = CameraConfigurationUtils.findBestPreviewSizeValue(parameters, screenResolution);
+        bestPreviewSize = CameraConfigurationUtils.findBestPreviewSizeValue(parameters,
+                screenResolution);
         Log.i(TAG, "Best available preview size: " + bestPreviewSize);
 
         boolean isScreenPortrait = screenResolution.x < screenResolution.y;
@@ -146,7 +156,8 @@ final class CameraConfigurationManager {
         Camera.Parameters parameters = theCamera.getParameters();
 
         if (parameters == null) {
-            Log.w(TAG, "Device error: no camera parameters are available. Proceeding without configuration.");
+            Log.w(TAG, "Device error: no camera parameters are available. Proceeding without " +
+                    "configuration.");
             return;
         }
 
@@ -178,9 +189,12 @@ final class CameraConfigurationManager {
 
         Camera.Parameters afterParameters = theCamera.getParameters();
         Camera.Size afterSize = afterParameters.getPreviewSize();
-        if (afterSize != null && (bestPreviewSize.x != afterSize.width || bestPreviewSize.y != afterSize.height)) {
-            Log.w(TAG, "Camera said it supported preview size " + bestPreviewSize.x + 'x' + bestPreviewSize.y +
-                    ", but after setting it, preview size is " + afterSize.width + 'x' + afterSize.height);
+        if (afterSize != null && (bestPreviewSize.x != afterSize.width || bestPreviewSize.y !=
+                afterSize.height)) {
+            Log.w(TAG, "Camera said it supported preview size " + bestPreviewSize.x + 'x' +
+                    bestPreviewSize.y +
+                    ", but after setting it, preview size is " + afterSize.width + 'x' +
+                    afterSize.height);
             bestPreviewSize.x = afterSize.width;
             bestPreviewSize.y = afterSize.height;
         }
