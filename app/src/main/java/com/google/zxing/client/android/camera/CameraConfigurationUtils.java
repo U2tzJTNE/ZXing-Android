@@ -289,6 +289,7 @@ public final class CameraConfigurationUtils {
             return new Point(defaultSize.width, defaultSize.height);
         }
 
+        //打印屏幕预览尺寸
         if (Log.isLoggable(TAG, Log.INFO)) {
             StringBuilder previewSizesString = new StringBuilder();
             for (Camera.Size size : rawSupportedSizes) {
@@ -310,17 +311,19 @@ public final class CameraConfigurationUtils {
                 continue;
             }
 
+            //判断是否反转
             boolean isCandidatePortrait = realWidth < realHeight;
             int maybeFlippedWidth = isCandidatePortrait ? realHeight : realWidth;
             int maybeFlippedHeight = isCandidatePortrait ? realWidth : realHeight;
             double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
+
             double distortion = Math.abs(aspectRatio - screenAspectRatio);
+            //判断宽高比是否大于0.15
             if (distortion > MAX_ASPECT_DISTORTION) {
                 continue;
             }
 
-            if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution
-                    .y) {
+            if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution.y) {
                 Point exactPoint = new Point(realWidth, realHeight);
                 Log.i(TAG, "Found preview size exactly matching screen size: " + exactPoint);
                 return exactPoint;

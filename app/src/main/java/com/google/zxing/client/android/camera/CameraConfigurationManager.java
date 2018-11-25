@@ -100,21 +100,6 @@ final class CameraConfigurationManager {
             Log.i(TAG, "Front camera overriden to: " + cwRotationFromNaturalToCamera);
         }
 
-    /*
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-    String overrideRotationString;
-    if (camera.getFacing() == CameraFacing.FRONT) {
-      overrideRotationString = prefs.getString(PreferencesActivity
-      .KEY_FORCE_CAMERA_ORIENTATION_FRONT, null);
-    } else {
-      overrideRotationString = prefs.getString(PreferencesActivity.KEY_FORCE_CAMERA_ORIENTATION,
-      null);
-    }
-    if (overrideRotationString != null && !"-".equals(overrideRotationString)) {
-      Log.i(TAG, "Overriding camera manually to " + overrideRotationString);
-      cwRotationFromNaturalToCamera = Integer.parseInt(overrideRotationString);
-    }
-     */
         //根据屏幕方向和相机方向判断是否有需要进行旋转
         cwRotationFromDisplayToCamera = (360 + cwRotationFromNaturalToCamera -
                 cwRotationFromNaturalToDisplay) % 360;
@@ -128,7 +113,9 @@ final class CameraConfigurationManager {
         Log.i(TAG, "Clockwise rotation from display to camera: " + cwNeededRotation);
 
         Point theScreenResolution = new Point();
-        display.getSize(theScreenResolution);
+        if (display != null) {
+            display.getSize(theScreenResolution);
+        }
         screenResolution = theScreenResolution;
         Log.i(TAG, "Screen resolution in current orientation: " + screenResolution);
         // 寻找最佳的预览宽高值
