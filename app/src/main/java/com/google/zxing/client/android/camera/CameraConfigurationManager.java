@@ -149,14 +149,12 @@ final class CameraConfigurationManager {
         if (safeMode) {
             Log.w(TAG, "In camera config safe mode -- most settings will not be honored");
         }
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
         CameraConfigurationUtils.setFocus(
                 parameters,
                 true,
                 true,
                 safeMode);
+
 
         if (!safeMode) {
             //SetRecordingHint to true also a workaround for low framerate on Nexus 4
