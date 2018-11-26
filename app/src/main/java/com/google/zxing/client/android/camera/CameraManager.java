@@ -259,7 +259,7 @@ public final class CameraManager {
             }
             // 获取相机分辨率和屏幕分辨率
             Rect rect = new Rect(framingRect);
-            Point cameraResolution = configManager.getCameraResolution();
+            Point cameraResolution = configManager.getBestPreviewSize();
             Point screenResolution = configManager.getScreenResolution();
             if (cameraResolution == null || screenResolution == null) {
                 // Called early, before init even finished

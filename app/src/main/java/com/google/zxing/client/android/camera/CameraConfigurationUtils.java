@@ -22,9 +22,11 @@ import android.hardware.Camera;
 import android.os.Build;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -275,9 +277,9 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static Point findBestPreviewSizeValue(Camera.Parameters parameters, Point
+    //查找最佳预览尺寸
+    public static Point findBestPreviewSizeValue(Camera.Parameters parameters, final Point
             screenResolution) {
-
         // 获取当前手机支持的屏幕预览尺寸
         List<Camera.Size> rawSupportedSizes = parameters.getSupportedPreviewSizes();
         if (rawSupportedSizes == null) {
@@ -288,66 +290,52 @@ public final class CameraConfigurationUtils {
             }
             return new Point(defaultSize.width, defaultSize.height);
         }
-
-        //打印屏幕预览尺寸
-        if (Log.isLoggable(TAG, Log.INFO)) {
-            StringBuilder previewSizesString = new StringBuilder();
-            for (Camera.Size size : rawSupportedSizes) {
-                previewSizesString.append(size.width).append('x').append(size.height).append(' ');
+        // 对这些尺寸根据像素值（即宽乘高的值）进行从大到小排序
+        List<Camera.Size> supportedPreviewSizes = new ArrayList<>(rawSupportedSizes);
+        Collections.sort(supportedPreviewSizes, new Comparator<Camera.Size>() {
+            @Override
+            public int compare(Camera.Size a, Camera.Size b) {
+                int aPixels = a.height * a.width;
+                int bPixels = b.height * b.width;
+                return Integer.compare(bPixels, aPixels);
             }
-            Log.i(TAG, "Supported preview sizes: " + previewSizesString);
-        }
-
-        double screenAspectRatio = screenResolution.x / (double) screenResolution.y;
-
-        // Find a suitable size, with max resolution
-        int maxResolution = 0;
-        Camera.Size maxResPreviewSize = null;
-        for (Camera.Size size : rawSupportedSizes) {
-            int realWidth = size.width;
-            int realHeight = size.height;
-            int resolution = realWidth * realHeight;
-            if (resolution < MIN_PREVIEW_PIXELS) {
+        });
+        final double screenAspectRatio = (double) screenResolution.x / (double) screenResolution.y;
+        Iterator<Camera.Size> it = supportedPreviewSizes.iterator();
+        while (it.hasNext()) {
+            Camera.Size supportedPreviewSize = it.next();
+            int realWidth = supportedPreviewSize.width;
+            int realHeight = supportedPreviewSize.height;
+            // 首先把不符合最小预览像素值的尺寸排除
+            if (realWidth * realHeight < MIN_PREVIEW_PIXELS) {
+                it.remove();
                 continue;
             }
-
-            //判断是否反转
-            boolean isCandidatePortrait = realWidth < realHeight;
+            boolean isCandidatePortrait = realHeight < realWidth;
             int maybeFlippedWidth = isCandidatePortrait ? realHeight : realWidth;
             int maybeFlippedHeight = isCandidatePortrait ? realWidth : realHeight;
-            double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
-
+            double aspectRatio = (double) maybeFlippedWidth / (double) maybeFlippedHeight;
             double distortion = Math.abs(aspectRatio - screenAspectRatio);
-            //判断宽高比是否大于0.15
+            // 根据宽高比判断是否满足最大误差要求（默认最大值为0.15，即宽高比默认不能超过给定比例的15%）
             if (distortion > MAX_ASPECT_DISTORTION) {
+                it.remove();
                 continue;
             }
-
             if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution.y) {
                 Point exactPoint = new Point(realWidth, realHeight);
                 Log.i(TAG, "Found preview size exactly matching screen size: " + exactPoint);
                 return exactPoint;
             }
-
-            // Resolution is suitable; record the one with max resolution
-            if (resolution > maxResolution) {
-                maxResolution = resolution;
-                maxResPreviewSize = size;
-            }
         }
-
-        // If no exact match, use largest preview size. This was not a great idea on older
-        // devices because
-        // of the additional computation needed. We're likely to get here on newer Android 4+
-        // devices, where
-        // the CPU is much more powerful.
-        if (maxResPreviewSize != null) {
-            Point largestSize = new Point(maxResPreviewSize.width, maxResPreviewSize.height);
-            Log.i(TAG, "Using largest suitable preview size: " + largestSize);
+        // 如果没有精确匹配到合适的尺寸，则使用最大的尺寸
+        if (!supportedPreviewSizes.isEmpty()) {
+            Collections.sort(supportedPreviewSizes, new SizeComparator(screenResolution.x, screenResolution.y));
+            Camera.Size largestPreview = supportedPreviewSizes.get(0);
+            Point largestSize = new Point(largestPreview.width, largestPreview.height);
+            Log.i(TAG, "最佳尺寸:" + largestSize);
             return largestSize;
         }
-
-        // If there is nothing at all suitable, return current preview size
+        // 如果没有找到合适的尺寸，就返回默认设定的尺寸
         Camera.Size defaultPreview = parameters.getPreviewSize();
         if (defaultPreview == null) {
             throw new IllegalStateException("Parameters contained no preview size!");
@@ -402,6 +390,7 @@ public final class CameraConfigurationUtils {
         return result.toString();
     }
 
+    //收集统计数据
     public static String collectStats(Camera.Parameters parameters) {
         return collectStats(parameters.flatten());
     }
@@ -438,6 +427,44 @@ public final class CameraConfigurationUtils {
         }
 
         return result.toString();
+    }
+
+    /**
+     * 预览尺寸与给定的宽高尺寸比较器。首先比较宽高的比例，在宽高比相同的情况下，根据宽和高的最小差进行比较。
+     */
+    private static class SizeComparator implements Comparator<Camera.Size> {
+        private final int width;
+        private final int height;
+        private final float ratio;
+
+        SizeComparator(int width, int height) {
+            if (height < width) {
+                this.width = height;
+                this.height = width;
+            } else {
+                this.width = width;
+                this.height = height;
+            }
+            this.ratio = (float) this.height / this.width;
+        }
+
+        @Override
+        public int compare(Camera.Size size1, Camera.Size size2) {
+            int width1 = size1.width;
+            int height1 = size1.height;
+            int width2 = size2.width;
+            int height2 = size2.height;
+            float ratio1 = Math.abs((float) width1 / height1 - ratio);
+            float ratio2 = Math.abs((float) width2 / height2 - ratio);
+            int result = Float.compare(ratio1, ratio2);
+            if (result != 0) {
+                return result;
+            } else {
+                int minGap1 = Math.abs(width - width1) + Math.abs(height - height1);
+                int minGap2 = Math.abs(width - width2) + Math.abs(height - height2);
+                return minGap1 - minGap2;
+            }
+        }
     }
 
 }

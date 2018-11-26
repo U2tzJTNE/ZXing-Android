@@ -42,7 +42,6 @@ final class CameraConfigurationManager {
     private int cwNeededRotation;
     private int cwRotationFromDisplayToCamera;
     private Point screenResolution;
-    private Point cameraResolution;
     private Point bestPreviewSize;
     private Point previewSizeOnScreen;
 
@@ -119,9 +118,6 @@ final class CameraConfigurationManager {
         screenResolution = theScreenResolution;
         Log.i(TAG, "Screen resolution in current orientation: " + screenResolution);
         // 寻找最佳的预览宽高值
-        cameraResolution = CameraConfigurationUtils.findBestPreviewSizeValue(parameters,
-                screenResolution);
-        Log.i(TAG, "Camera resolution: " + cameraResolution);
         bestPreviewSize = CameraConfigurationUtils.findBestPreviewSizeValue(parameters,
                 screenResolution);
         Log.i(TAG, "Best available preview size: " + bestPreviewSize);
@@ -193,10 +189,6 @@ final class CameraConfigurationManager {
 
     Point getPreviewSizeOnScreen() {
         return previewSizeOnScreen;
-    }
-
-    Point getCameraResolution() {
-        return cameraResolution;
     }
 
     Point getScreenResolution() {
