@@ -16,7 +16,6 @@
 
 package com.google.zxing.client.android;
 
-import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 import com.google.zxing.client.android.camera.CameraManager;
 
@@ -39,7 +38,6 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.Collection;
 
 /**
  * This activity opens the camera and does the actual scanning on a background thread. It draws a
@@ -58,8 +56,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private Result savedResultToShow;
     private ViewfinderView viewfinderView;
     private boolean hasSurface;
-    private Collection<BarcodeFormat> decodeFormats;
-    private String characterSet;
     private InactivityTimer inactivityTimer;
     private BeepManager beepManager;
     private MyOrientationDetector myOrientationDetector;
@@ -114,8 +110,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
         inactivityTimer.onResume();
 
-        decodeFormats = null;
-        characterSet = null;
         SurfaceView surfaceView = findViewById(R.id.preview_view);
         SurfaceHolder surfaceHolder = surfaceView.getHolder();
         if (hasSurface) {
@@ -213,8 +207,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             cameraManager.openDriver(surfaceHolder);
             // Creating the handler starts the preview, which can also throw a RuntimeException.
             if (handler == null) {
-                handler = new CaptureActivityHandler(this, decodeFormats, characterSet,
-                        cameraManager);
+                handler = new CaptureActivityHandler(this, cameraManager);
             }
             decodeOrStoreSavedBitmap(null, null);
         } catch (IOException ioe) {

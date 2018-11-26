@@ -18,19 +18,17 @@ package com.google.zxing.client.android;
 
 
 import com.google.zxing.BinaryBitmap;
-import com.google.zxing.DecodeHintType;
-import com.google.zxing.MultiFormatReader;
 import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.ReaderException;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import java.util.Map;
 import java.util.Objects;
 
 final class DecodeHandler extends Handler {
@@ -38,12 +36,11 @@ final class DecodeHandler extends Handler {
     private static final String TAG = DecodeHandler.class.getSimpleName();
 
     private final CaptureActivity activity;
-    private final MultiFormatReader multiFormatReader;
+    private final QRCodeReader mQRCodeReader;
     private boolean running = true;
 
-    DecodeHandler(CaptureActivity activity, Map<DecodeHintType, Object> hints) {
-        multiFormatReader = new MultiFormatReader();
-        multiFormatReader.setHints(hints);
+    DecodeHandler(CaptureActivity activity) {
+        mQRCodeReader = new QRCodeReader();
         this.activity = activity;
     }
 
@@ -83,15 +80,18 @@ final class DecodeHandler extends Handler {
             data = rotatedData;
         }
         Result rawResult = null;
+        // 构造基于平面的YUV亮度源，即包含二维码区域的数据源
         PlanarYUVLuminanceSource source = activity.getCameraManager().buildLuminanceSource(data, width, height);
         if (source != null) {
+            // 构造二值图像比特流，使用HybridBinarizer算法解析数据源
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
             try {
-                rawResult = multiFormatReader.decodeWithState(bitmap);
+                // 采用MultiFormatReader解析图像，可以解析多种数据格式
+                rawResult = mQRCodeReader.decode(bitmap);
             } catch (ReaderException re) {
                 // continue
             } finally {
-                multiFormatReader.reset();
+                mQRCodeReader.reset();
             }
         }
 

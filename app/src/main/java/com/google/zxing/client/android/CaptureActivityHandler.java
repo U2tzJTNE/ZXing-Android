@@ -16,7 +16,6 @@
 
 package com.google.zxing.client.android;
 
-import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 import com.google.zxing.client.android.camera.CameraManager;
 
@@ -24,8 +23,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
-
-import java.util.Collection;
 
 /**
  * This class handles all the messaging which comprises the state machine for capture.
@@ -45,13 +42,9 @@ public final class CaptureActivityHandler extends Handler {
         DONE
     }
 
-    CaptureActivityHandler(CaptureActivity activity,
-                           Collection<BarcodeFormat> decodeFormats,
-                           String characterSet,
-                           CameraManager cameraManager) {
+    CaptureActivityHandler(CaptureActivity activity, CameraManager cameraManager) {
         this.activity = activity;
-        decodeThread = new DecodeThread(activity, decodeFormats, characterSet,
-                new ViewfinderResultPointCallback(activity.getViewfinderView()));
+        decodeThread = new DecodeThread(activity);
         decodeThread.start();
         state = State.SUCCESS;
         // Start ourselves capturing previews and decoding.
