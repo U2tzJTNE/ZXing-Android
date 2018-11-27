@@ -60,9 +60,11 @@ final class BeepManager implements MediaPlayer.OnErrorListener, Closeable {
     }
 
     synchronized void playBeepSoundAndVibrate() {
+        //提示音
         if (playBeep && mediaPlayer != null) {
             mediaPlayer.start();
         }
+        //震动
         if (vibrate) {
             Vibrator vibrator = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);
             vibrator.vibrate(VIBRATE_DURATION);
